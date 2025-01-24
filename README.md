@@ -1,36 +1,59 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Commodity Ratio Dashboard
 
-## Getting Started
+## Overview
 
-First, run the development server:
+A real-time dashboard tracking Gold/Silver and Gold/Lumber ratios using market data from Polygon.io API.
+
+## Installation
+
+```bash
+npm install
+# Create .env.local with your Polygon API key
+NEXT_PUBLIC_POLYGON_API_KEY=your_key_here
+```
+
+## Usage
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Features
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- Real-time ratio tracking
+- Time period selection (1M-5Y)
+- Interactive charts with zoom/pan
+- Historical data visualization
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Market Analysis
 
-## Learn More
+### Gold/Silver Ratio
 
-To learn more about Next.js, take a look at the following resources:
+- **High Ratio**: Indicates market fear/uncertainty
+  - Investors prefer gold as safe haven
+  - Defensive positioning
+- **Low Ratio**: Shows risk appetite
+  - Industrial silver demand rises
+  - Economic optimism
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### Gold/Lumber Ratio
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- **High Ratio**: Risk-off sentiment
+  - Housing market weakness
+  - Construction slowdown
+  - Economic uncertainty
+- **Low Ratio**: Risk-on environment
+  - Strong housing market
+  - Construction boom
+  - Economic growth
 
-## Deploy on Vercel
+## Tech Stack
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- Next.js
+- Recharts
+- Tailwind CSS
+- Polygon.io API
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```
+
+```
