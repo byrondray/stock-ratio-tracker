@@ -53,7 +53,3 @@ npm run dev
 - Recharts
 - Tailwind CSS
 - Polygon.io API
-
-```
-
-```
