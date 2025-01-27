@@ -17,82 +17,162 @@ import {
 export default function Home() {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [timeframe, setTimeframe] = useState('1Y');
   const API_KEY = process.env.NEXT_PUBLIC_POLYGON_API_KEY;
 
+  const formatDate = (timestamp: number) => {
+    const date = new Date(timestamp);
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(
+      2,
+      '0'
+    )}-${String(date.getDate()).padStart(2, '0')}`;
+  };
+
   const getStartDate = (timeframe: string) => {
     const now = new Date();
+    let startDate;
+
     switch (timeframe) {
       case '1M':
-        return new Date(now.setMonth(now.getMonth() - 1));
+        startDate = new Date(
+          now.getFullYear(),
+          now.getMonth() - 1,
+          now.getDate()
+        );
+        break;
       case '3M':
-        return new Date(now.setMonth(now.getMonth() - 3));
+        startDate = new Date(
+          now.getFullYear(),
+          now.getMonth() - 3,
+          now.getDate()
+        );
+        break;
       case '6M':
-        return new Date(now.setMonth(now.getMonth() - 6));
+        startDate = new Date(
+          now.getFullYear(),
+          now.getMonth() - 6,
+          now.getDate()
+        );
+        break;
       case '1Y':
-        return new Date(now.setFullYear(now.getFullYear() - 1));
+        startDate = new Date(
+          now.getFullYear() - 1,
+          now.getMonth(),
+          now.getDate()
+        );
+        break;
       case '2Y':
-        return new Date(now.setFullYear(now.getFullYear() - 2));
+        startDate = new Date(
+          now.getFullYear() - 2,
+          now.getMonth(),
+          now.getDate()
+        );
+        break;
       case '5Y':
-        return new Date(now.setFullYear(now.getFullYear() - 5));
+        startDate = new Date(
+          now.getFullYear() - 5,
+          now.getMonth(),
+          now.getDate()
+        );
+        break;
       case 'ALL':
-        return new Date('2010-01-01');
+        startDate = new Date('2010-01-01');
+        break;
       default:
-        return new Date(now.setFullYear(now.getFullYear() - 1));
+        startDate = new Date(
+          now.getFullYear() - 1,
+          now.getMonth(),
+          now.getDate()
+        );
     }
+    return formatDate(startDate.getTime());
   };
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const startDate = getStartDate(timeframe).toISOString().split('T')[0];
-        const endDate = new Date().toISOString().split('T')[0];
+        setLoading(true);
+        setError(null);
+        const startDate = getStartDate(timeframe);
+        const endDate = formatDate(new Date().getTime());
 
-        const goldRes = await axios.get(
-          `https://api.polygon.io/v2/aggs/ticker/GLD/range/1/month/${startDate}/${endDate}?apiKey=${API_KEY}`
-        );
+        const fetchSymbolData = async (symbol: string) => {
+          const response = await axios.get(
+            `https://api.polygon.io/v2/aggs/ticker/${symbol}/range/1/month/${startDate}/${endDate}`,
+            {
+              params: {
+                apiKey: API_KEY,
+              },
+            }
+          );
+          return response.data;
+        };
 
-        const silverRes = await axios.get(
-          `https://api.polygon.io/v2/aggs/ticker/SLV/range/1/month/${startDate}/${endDate}?apiKey=${API_KEY}`
-        );
+        const [goldRes, silverRes, lumberRes] = await Promise.all([
+          fetchSymbolData('GLD'),
+          fetchSymbolData('SLV'),
+          fetchSymbolData('WOOD'),
+        ]);
 
-        const lumberRes = await axios.get(
-          `https://api.polygon.io/v2/aggs/ticker/WOOD/range/1/month/${startDate}/${endDate}?apiKey=${API_KEY}`
-        );
+        if (!goldRes.results || !silverRes.results || !lumberRes.results) {
+          throw new Error('Missing data for one or more symbols');
+        }
 
-        const processedData = goldRes.data.results.map(
-          (
-            item: { c: any; t: string | number | Date },
-            index: string | number
-          ) => {
+        const processedData = goldRes.results.map(
+          (item: { c: number; t: number }, index: number) => {
             const goldPrice = item.c;
-            const silverPrice = silverRes.data.results[index]?.c || 0;
-            const lumberPrice = lumberRes.data.results[index]?.c || 0;
+            const silverPrice = silverRes.results[index]?.c || 0;
+            const lumberPrice = lumberRes.results[index]?.c || 0;
 
             return {
-              date: new Date(item.t).toLocaleDateString(),
+              date: formatDate(item.t),
               goldSilverRatio: silverPrice
                 ? ((goldPrice / silverPrice) * 10).toFixed(2)
-                : 0,
+                : '0',
               goldLumberRatio: lumberPrice
                 ? ((goldPrice / lumberPrice) * 10).toFixed(2)
-                : 0,
+                : '0',
             };
           }
         );
 
         setData(processedData);
-        setLoading(false);
-      } catch (error) {
+      } catch (error: any) {
         console.error('Error fetching data:', error);
+        setError(error.response?.data?.message || 'Failed to fetch data');
+      } finally {
         setLoading(false);
       }
     };
 
     fetchData();
-  }, [timeframe]);
+  }, [timeframe, API_KEY]);
 
-  if (loading) return <div>Loading...</div>;
+  if (loading) {
+    return (
+      <div className='flex justify-center items-center h-screen'>
+        <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-gray-300'></div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className='flex justify-center items-center h-screen'>
+        <div className='text-red-500 text-center p-4'>
+          <h2 className='text-xl font-bold mb-2'>Error</h2>
+          <p>{error}</p>
+          <button
+            onClick={() => window.location.reload()}
+            className='mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600'
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className='p-4 h-screen space-y-8'>
